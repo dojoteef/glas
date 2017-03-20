@@ -1,0 +1,19 @@
+{
+  "glas": {
+    "attention_type": "none",
+    "clip": 5,
+    "dataset": "mnist_binarized",
+    "datadir": "data/mnist",
+    "learning_rate_decay_step": 75,
+    "num_epochs": 250,
+    "num_layers": 1,
+    "num_steps": 64,
+    "num_units": 256,
+    "samples": 1,
+    "sample_size": 50,
+    "sample_attention_type": "cauchy",
+    "sample_type": "chisq",
+    "latent_read_size": 4,
+    "latent_size": 40
+  }
+}
