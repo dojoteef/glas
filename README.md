@@ -256,10 +256,10 @@ the earlier time steps appear uniform; they slowly transition to adding more
 unique features to distinguish the images. In contrast, DRAW generates images
 which best describe the total distribution at each time step.
 
-*Samples generated using latent attention over 16 time steps*
+*Samples generated using latent attention over 16 time steps*  
 ![Samples generated with latent_attention](images/glas_generated.png "Samples generated with latent attention")
 
-*Samples generated using DRAW over 16 time steps*
+*Samples generated using DRAW over 16 time steps*  
 ![Samples generated with DRAW](images/draw_generated.png "Samples generated with DRAW")
 
 ## Unsuccessful Approaches
