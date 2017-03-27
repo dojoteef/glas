@@ -1,0 +1,9 @@
+{
+  "batch_size": 128,
+  "checkpoint_frequency": 3600,
+  "learning_rate": 1e-3,
+  "learning_rate_min": 1e-5,
+  "num_readers": 2,
+  "num_preprocessing_threads": 2,
+  "summary_frequency": 1800
+}

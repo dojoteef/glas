@@ -26,6 +26,7 @@ import tensorflow.contrib.slim as slim
 from tensorflow.python.framework import dtypes
 
 import glas.data.encode as encode_utils
+from glas.utils.ops import get_folds
 
 
 IMAGE_SHAPE = [28, 28, 1]
@@ -65,7 +66,7 @@ def convert(directory, validation_size, num_threads=1):
             images, name, directory, num_threads=num_threads)
 
 
-def dataset(directory, subset):
+def dataset(directory, subset, num_folds, fold, holdout):
     """ Return the mnist dataset """
     decoder = slim.tfexample_decoder.TFExampleDecoder(
         {'image/encoded': tf.FixedLenFeature([], tf.string),
@@ -74,16 +75,19 @@ def dataset(directory, subset):
     )
 
     filenames = encode_utils.get_filenames(directory, subset)
+    filenames = get_folds(filenames, num_folds, fold, holdout)
+
     return slim.dataset.Dataset(
         filenames, tf.TFRecordReader, decoder,
         encode_utils.num_examples(filenames), _ITEMS_TO_DESCRIPTIONS,
         data_shape=IMAGE_SHAPE)
 
 
-def dataset_preloaded(directory, subset):
+def dataset_preloaded(directory, subset, num_folds, fold, holdout):
     """ Return the mnist dataset """
     datasets = learn.datasets.mnist.read_data_sets(directory)
     images = getattr(datasets, subset).images
+    images = get_folds(images, num_folds, fold, holdout)
 
     return slim.dataset.Dataset(
         images, None, None, images.shape[0], _ITEMS_TO_DESCRIPTIONS,

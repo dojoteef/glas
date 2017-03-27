@@ -99,7 +99,8 @@ def evaluate_model(config):
     ###########################################################
     with tf.name_scope('input_pipeline'):
         dataset = input_utils.get_dataset(
-            config.datadir, config.dataset, config.datasubset)
+            config.datadir, config.dataset, config.datasubset,
+            num_folds=config.fold_count, fold=config.fold, holdout=True)
 
         init_op, init_feed_dict, image = input_utils.get_data(
             config.dataset, dataset, config.batch_size,

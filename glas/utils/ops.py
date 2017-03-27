@@ -18,9 +18,19 @@ from __future__ import absolute_import
 from __future__ import division
 from __future__ import print_function
 
+import numpy as np
 import tensorflow as tf
 import tensorflow.contrib.distributions as distributions
 import tensorflow.contrib.framework as framework
+
+
+def get_folds(sources, num_folds, fold, holdout):
+    """ Get the folds for the data set. """
+    if num_folds < 2:
+        return sources
+
+    folds = np.array_split(sources, num_folds)
+    return folds[fold] if holdout else np.concatenate(folds[:fold] + folds[fold + 1:])
 
 
 def reduce_prod(iterable):

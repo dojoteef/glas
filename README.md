@@ -245,8 +245,8 @@ log-likelihood of the model.
 |:---------|---------:|-------:|:-------|-----------:|
 | MNIST    | 64       | 92.07  | KL     | 22.24      |
 | MNIST    | 64       | 89.09  | χ²     | 10.88      |
-| OMNIGLOT | 16       | 125.77 | KL     | 20.88      |
-| OMNIGLOT | 16       | 137.97 | χ²     | 7.92       |
+| OMNIGLOT | 64       | 119.63 | KL     | 24.82      |
+| OMNIGLOT | 64       | 112.43 | χ²     | 14.59      |
 
 
 **MNIST**
@@ -313,22 +313,15 @@ modeled after the attention used in DRAW, was developed.
 
 ## Future Work
 
-Currently, the hyperparameter tuning was implemented with a manual search
-approach, which has proved suboptimal. Due to the lengthy effort involved in
-tuning hyperparamaters, an immediate follow up to this paper will add an
-automated approach to hyperparameter tuning, utilizing one of the following:
-grid search, random search, or Bayesian optimization.
+A future avenue of research is to minimize the plausibility of the canvas at
+each time step. Basically, the idea is to have the likelihood that the canvas
+is sampled from the true distribution be as high as possible at each time step.
+The goal is to have a hierarchy of representation, such that each time step
+represents the addition of a single feature or a set of features.
 
-An additional avenue of research is to minimize the plausibility of the canvas
-at each time step. Basically, the idea is to have the likelihood that the
-canvas is sampled from the true distribution be as high as possible at each
-time step. The goal is to have a hierarchy of representation, such that each
-time step represents the addition of a single feature or a set of features.
-
-Finally, as the model applies attention over the latent space, it should be
-well suited to text datasets. A future avenue of research is applying the model
-to such a dataset, as well as visualizing the output of the model at each time
-step.
+Additionally, as the model applies attention over the latent space, it should
+be well suited to text datasets. A goal is to apply the model to such a
+dataset and visualize the output of the model at each time step.
 
 ## References
 

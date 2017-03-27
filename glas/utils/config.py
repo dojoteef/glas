@@ -104,6 +104,20 @@ def _json_parser():
         help='Which subset of the dataset to use.'
     )
     parser.add_argument(
+        '--fold',
+        type=int,
+        default=0,
+        action='store',
+        help='Which fold of the data to use'
+    )
+    parser.add_argument(
+        '--fold_count',
+        type=int,
+        default=1,
+        action='store',
+        help='How many folds are there for the data'
+    )
+    parser.add_argument(
         '--latent_read_size',
         type=int,
         default=2,

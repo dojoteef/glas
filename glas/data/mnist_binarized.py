@@ -23,6 +23,7 @@ import tensorflow.contrib.learn as learn
 import tensorflow.contrib.slim as slim
 
 from glas.data.mnist import IMAGE_SHAPE
+from glas.utils.ops import get_folds
 
 
 _ITEMS_TO_DESCRIPTIONS = {'image': 'A [28, 28, 1] image representing a binarized MNIST digit.'}
@@ -35,13 +36,14 @@ def _get_filename(subset):
     return 'binarized_mnist_{0}.amat'.format(_SUBSET_TO_FILENAME[subset])
 
 
-def dataset(directory, subset):
+def dataset(directory, subset, num_folds, fold, holdout):
     """ Return the mnist dataset """
     filename = _get_filename(subset)
     local_file = learn.datasets.base.maybe_download(filename, directory, _DOWNLOAD_URL + filename)
     with open(local_file, 'r') as data_file:
         images = np.array([[np.float32(i) for i in line.split()] for line in data_file.readlines()])
 
+    images = get_folds(images, num_folds, fold, holdout)
     return slim.dataset.Dataset(
         images, None, None, images.shape[0], _ITEMS_TO_DESCRIPTIONS,
         data_shape=IMAGE_SHAPE)

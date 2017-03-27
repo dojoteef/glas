@@ -35,9 +35,9 @@ DATASET_FUNCS = {
 DATASETS = DATASET_FUNCS.keys()
 
 
-def get_dataset(directory, dataset_name, subset_name):
+def get_dataset(directory, dataset_name, subset_name, num_folds=1, fold=0, holdout=False):
     """ Get the subset of the passed in dataset from the directory indicated """
-    return DATASET_FUNCS[dataset_name](directory, subset_name)
+    return DATASET_FUNCS[dataset_name](directory, subset_name, num_folds, fold, holdout)
 
 
 DATASET_SHAPE = {

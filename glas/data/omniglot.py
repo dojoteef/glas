@@ -25,6 +25,8 @@ import tensorflow.contrib.learn as learn
 import tensorflow.contrib.slim as slim
 from tensorflow.python.framework import dtypes
 
+from glas.utils.ops import get_folds
+
 
 IMAGE_SHAPE = [28, 28, 1]
 _ITEMS_TO_DESCRIPTIONS = {'image': 'A [28, 28, 1] image representing a binarized Omniglot digit.'}
@@ -52,7 +54,7 @@ def _correct_images(images):
     return max_val - images
 
 
-def dataset(directory, subset):
+def dataset(directory, subset, num_folds, fold, holdout):
     """ Return the mnist dataset """
     local_file = learn.datasets.base.maybe_download('omniglot.mat', directory, _DOWNLOAD_URL)
     data = scipy.io.loadmat(local_file)
@@ -65,6 +67,7 @@ def dataset(directory, subset):
     elif subset == 'validate':
         images = images[-_VALIDATION_SIZE:]
 
+    images = get_folds(images, num_folds, fold, holdout)
     return slim.dataset.Dataset(
         images, None, None, images.shape[0], _ITEMS_TO_DESCRIPTIONS,
         data_shape=IMAGE_SHAPE)

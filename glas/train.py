@@ -101,7 +101,8 @@ def train_model(config):
     ###########################################################
     with tf.device('/cpu:0'), tf.name_scope('input_pipeline'):
         dataset = input_utils.get_dataset(
-            config.datadir, config.dataset, 'train')
+            config.datadir, config.dataset, 'train',
+            num_folds=config.fold_count, fold=config.fold, holdout=False)
 
         init_op, init_feed_dict, image = input_utils.get_data(
             config.dataset, dataset, config.batch_size,
