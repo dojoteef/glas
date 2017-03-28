@@ -105,13 +105,14 @@ Similarly, 𝑫 is the decoder function which computes the vector 𝒅𝑡 at ti
 𝑡.
 
 The encoder output 𝒆𝑡 is passed to the latent attention function 𝑨. The set of
-features 𝒂𝑡 extracted by 𝑨 are then used to sample from the approximate
-posterior 𝒛𝑡 ∼ 𝘘(𝑍𝑡|𝒂𝑡). The sigmoid function is denoted by 𝛔 below:
+features 𝒂𝑡 extracted by 𝑨 over the latent space 𝕃 are then used to sample from
+the approximate posterior 𝒛𝑡 ∼ 𝘘(𝑍𝑡|𝒂𝑡). The sigmoid function is denoted by 𝛔
+below:
 
 ```
 𝒙'𝑡 = 𝒙 - 𝛔(𝒐𝑡₋₁)
 𝒆𝑡 = 𝑬([𝒅𝑡₋₁,𝒙,𝒙'𝑡])
-𝒂𝑡 = 𝑨(𝒆𝑡)
+𝒂𝑡 = 𝑨(𝒆𝑡, 𝕃)
 𝒛𝑡 ∼ 𝘘(𝑍𝑡|𝒂𝑡)
 𝒅𝑡 = 𝑫([𝒅𝑡₋₁,𝒛𝑡])
 𝒐𝑡 = 𝒐𝑡₋₁ + 𝒅𝑡
@@ -136,7 +137,7 @@ filter.
 The Gaussian filter used in DRAW is a 2D filter over the image, which extracts
 patches of varying size and sharpness. The Cauchy filter is similarly a 2D
 filter; however, instead of being applied over the image, the Cauchy filter is
-applied over the latent space. The filter is based upon the Cauchy
+applied over the latent space 𝕃. The filter is based upon the Cauchy
 distribution, which is defined as:
 
 ```
@@ -230,23 +231,22 @@ Omniglot dataset is a 28x28 binarized version from Burda and colleagues (2015).
 
 The tests were run using the Kullback-Leibler divergence and the χ² divergence.
 For optimization, Adam was used (Kingma & Ba, 2015) with 𝛽₁=0.9, 𝛽₂=0.999,
-𝜖=10⁻⁸ and minibatch sizes of 128.
-
-Tuning the hyperparameters of the model was quite challenging using a manual
-search approach. Likely, this has influenced the experiment results to be less
-than optimal. Better hyperparameter tuning is needed to discover the full
-potential of this model.
+𝜖=10⁻⁸ and minibatch sizes of 128. The size of the latent space 𝕃 was 9x9, with
+a 5x5 latent attention filter. At each of the 64 time steps, a sample of size
+25 was generated from the approximate posterior, 𝒛𝑡 ∼ 𝘘(𝑍𝑡|𝒂𝑡).
 
 As stated in the methods section, it is clear there is a relationship with the
 depth of the model and how well the χ² divergence allows for optimizing the
-log-likelihood of the model.
+log-likelihood of the model. In the results below, with 64 time steps the χ²
+divergence leads to a lower log-likelihood than the Kullback-Leibler
+divergence.
 
-|  Dataset | Glimpses | NLL    | Metric | Divergence |
-|:---------|---------:|-------:|:-------|-----------:|
-| MNIST    | 64       | 92.07  | KL     | 22.24      |
-| MNIST    | 64       | 89.09  | χ²     | 10.88      |
-| OMNIGLOT | 64       | 119.63 | KL     | 24.82      |
-| OMNIGLOT | 64       | 112.43 | χ²     | 14.59      |
+|  Dataset | NLL    | Metric | Divergence |
+|:---------|-------:|:-------|-----------:|
+| MNIST    | 89.67  | KL     | 24.52      |
+| MNIST    | 82.07  | χ²     | 13.35      |
+| OMNIGLOT | 119.63 | KL     | 24.82      |
+| OMNIGLOT | 112.43 | χ²     | 14.59      |
 
 
 **MNIST**
