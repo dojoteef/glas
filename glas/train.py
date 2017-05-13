@@ -23,7 +23,6 @@ import argparse
 import tensorflow as tf
 import tensorflow.contrib.framework as framework
 import tensorflow.contrib.layers as layers
-import tensorflow.contrib.losses as losses
 from tensorflow.contrib.slim import learning
 
 import glas.data.inputs as input_utils
@@ -181,7 +180,7 @@ def train_model(config):
             for loss in tower_losses:
                 summaries.append(tf.summary.scalar(loss.op.name, loss))
 
-            for loss in losses.get_losses():
+            for loss in tf.losses.get_losses():
                 summaries.append(tf.summary.scalar(loss.op.name, loss))
 
         summary_op = tf.summary.merge(summaries, name='summaries')
@@ -189,7 +188,8 @@ def train_model(config):
     ###########################################################
     # Begin training
     ###########################################################
-    init_op = tf.group(tf.global_variables_initializer(), init_op)
+    global_init_op = tf.global_variables_initializer()
+    init_op = global_init_op if init_op is None else tf.group(global_init_op, init_op)
     session_config = tf.ConfigProto(
         allow_soft_placement=False,
         log_device_placement=FLAGS.log_device_placement)

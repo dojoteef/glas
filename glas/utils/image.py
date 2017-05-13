@@ -46,7 +46,7 @@ def tile_images(images, tiles=64):
     padded = tf.pad(images[:tile_count], tf.stack([[0, blanks], [0, 0], [0, 0], [0, 0]]))
 
     # Finally reshape the images to be tiled
-    rows = tf.concat(1, (tf.split(0, image_size, padded)))
-    columns = tf.concat(2, (tf.split(1, width, rows)))
+    rows = tf.concat((tf.split(padded, image_size, axis=0)), 1)
+    columns = tf.concat((tf.split(rows, width, axis=1)), 2)
 
     return columns

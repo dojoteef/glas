@@ -20,7 +20,6 @@ from __future__ import print_function
 
 import tensorflow as tf
 import tensorflow.contrib.framework as framework
-import tensorflow.contrib.losses as losses
 
 from glas.model.attention import create_attention
 from glas.model.cell import Cell
@@ -59,7 +58,7 @@ class GLAS(rnn.RNN):
             read_data = self.attention.read_multiple([data, data_error], decoded)
 
             # encode the data, error, and current decoded output
-            encoded = self.encoder(tf.concat(1, [read_data, decoded]))
+            encoded = self.encoder(tf.concat([read_data, decoded], 1))
 
             # sample from the approximate posterior
             sample = self.sampler(encoded)
@@ -106,8 +105,8 @@ class Generator(rnn.RNN):
 
 def calculate_reconstruction_loss(targets, outputs):
     """ Calculate the reconstruction loss given the inputs and targets """
-    loss = tf.nn.sigmoid_cross_entropy_with_logits(outputs, targets)
-    losses.add_loss(tf.reduce_mean(tf.reduce_sum(loss, 1), name='reconstruction_loss'))
+    loss = tf.nn.sigmoid_cross_entropy_with_logits(logits=outputs, labels=targets)
+    tf.losses.add_loss(tf.reduce_mean(tf.reduce_sum(loss, 1), name='reconstruction_loss'))
 
 
 def initialize_latent_weights(config, dataset):

@@ -25,7 +25,6 @@ import sys
 import tensorflow as tf
 import tensorflow.contrib.metrics as metrics
 import tensorflow.contrib.layers as layers
-import tensorflow.contrib.losses as losses
 import tensorflow.contrib.training as training
 
 import glas.data.inputs as input_utils
@@ -122,13 +121,13 @@ def evaluate_model(config):
     ###########################################################
     summaries = []
     metrics_map = {}
-    for loss in losses.get_losses():
+    for loss in tf.losses.get_losses():
         metrics_map[loss.op.name] = metrics.streaming_mean(loss)
 
     for metric in tf.get_collection(graph_utils.GraphKeys.METRICS):
         metrics_map[metric.op.name] = metrics.streaming_mean(metric)
 
-    total_loss = losses.get_total_loss()
+    total_loss = tf.losses.get_total_loss()
     metrics_map[total_loss.op.name] = metrics.streaming_mean(total_loss)
     names_to_values, names_to_updates = metrics.aggregate_metric_map(metrics_map)
 
@@ -160,9 +159,8 @@ def evaluate_model(config):
     ###########################################################
     checkpoint_path = FLAGS.checkpoint_path
     eval_ops = tf.group(*names_to_updates.values())
-    scaffold = tf.train.Scaffold(init_op, init_feed_dict)
     hooks = [
-        training.SummaryAtEndHook(FLAGS.log_dir, summary_op),
+        training.SummaryAtEndHook(log_dir=FLAGS.log_dir, summary_op=summary_op),
         training.StopAfterNEvalsHook(math.ceil(dataset.num_samples / float(config.batch_size)))]
 
     eval_kwargs = {}
@@ -175,10 +173,7 @@ def evaluate_model(config):
         assert tf.gfile.IsDirectory(checkpoint_path), (
             'checkpoint path must be a directory when using loop evaluation')
 
-        # On Tensorflow master fd87896 fixes this, but for now just set a very large number
-        eval_kwargs['max_number_of_evaluations'] = sys.maxint
-
-    eval_fn(checkpoint_path, scaffold=scaffold, hooks=hooks, eval_ops=eval_ops, **eval_kwargs)
+    eval_fn(checkpoint_path, hooks=hooks, eval_ops=eval_ops, **eval_kwargs)
 
 
 def main(argv=None):  # pylint: disable=unused-argument

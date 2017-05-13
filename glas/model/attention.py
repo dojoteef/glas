@@ -88,7 +88,7 @@ class NoAttention(Attention):
 
     def read_multiple(self, data_list, focus):
         """ Do a filtered read for multiple tensors using the same focus """
-        return tf.concat(1, [layers.flatten(data) for data in data_list])
+        return tf.concat([layers.flatten(data) for data in data_list], 1)
 
     def write(self, data):
         """ Do a write given the data """
@@ -122,7 +122,7 @@ class SimpleAttention(Attention):
         for data in data_list:
             focus_list.append(layers.flatten(focused * data))
 
-        return tf.concat(1, focus_list)
+        return tf.concat(focus_list, 1)
 
     def write(self, data):
         """ Do a filtered write given the data """
@@ -146,7 +146,7 @@ class ContentAttention(Attention):
     def _address(self, beta, key, data):
         """ Address the data with the given key """
         data = tf.nn.l2_normalize(data, -1)
-        content_weight = tf.nn.softmax(beta * tf.squeeze(tf.batch_matmul(data, key)))
+        content_weight = tf.nn.softmax(beta * tf.squeeze(tf.matmul(data, key)))
 
         return layers.flatten(tf.expand_dims(content_weight, -1) * data)
 
@@ -167,7 +167,7 @@ class ContentAttention(Attention):
         for data in data_list:
             focus_list.append(self._address(beta, key, data))
 
-        return tf.concat(1, focus_list)
+        return tf.concat(focus_list, 1)
 
     def write(self, data):
         """ Do a filtered write given the data """
@@ -221,7 +221,7 @@ class GridAttention(Attention):
         """ Generate an attention filter """
         with tf.variable_scope(scope, 'filter', [data]):
             x_offset, y_offset, log_stride, scale, log_gamma = tf.split(
-                1, 5, layers.linear(data, 5, scope='parameters'))
+                layers.linear(data, 5, scope='parameters'), 5, axis=1)
 
             center = self._get_center(grid, (x_offset, y_offset), tf.exp(log_stride))
 
@@ -249,7 +249,7 @@ class GridAttention(Attention):
         """ Read using the given filter """
         data = tf.reshape(data, (-1,) + self.shape)
         filter_x_transpose = tf.transpose(filter_x, [0, 2, 1])
-        patch = tf.batch_matmul(filter_y, tf.batch_matmul(data, filter_x_transpose))
+        patch = tf.matmul(filter_y, tf.matmul(data, filter_x_transpose))
 
         return gamma * layers.flatten(patch)
 
@@ -272,7 +272,7 @@ class GridAttention(Attention):
         for data in data_list:
             patches.append(self._read(data, filter_x, filter_y, gamma))
 
-        return tf.concat(1, patches)
+        return tf.concat(patches, 1)
 
     def write(self, data):
         """ Do a filtered write given the data """
@@ -284,7 +284,7 @@ class GridAttention(Attention):
         filter_y_transpose = tf.transpose(filter_y, [0, 2, 1])
         window = layers.linear(data, reduce_prod(self.write_grid.size))
         window = tf.reshape(window, (-1, self.write_grid.size[1], self.write_grid.size[0]))
-        patch = tf.batch_matmul(filter_y_transpose, tf.batch_matmul(window, filter_x))
+        patch = tf.matmul(filter_y_transpose, tf.matmul(window, filter_x))
 
         return tf.reciprocal(tf.maximum(gamma, self.epsilon)) * layers.flatten(patch)
 
@@ -300,7 +300,7 @@ class GaussianAttention(GridAttention):
         """ Generate an attention filter """
         with tf.variable_scope(scope, 'filter', [data]):
             x_offset, y_offset, log_stride, log_variance, log_gamma = tf.split(
-                1, 5, layers.linear(data, 5, scope='parameters'))
+                layers.linear(data, 5, scope='parameters'), 5, axis=1)
 
             center = self._get_center(grid, (x_offset, y_offset), tf.exp(log_stride))
 
@@ -324,7 +324,7 @@ class CauchyAttention(GridAttention):
         """ Generate an attention filter """
         with tf.variable_scope(scope, 'filter', [data]):
             x_offset, y_offset, log_stride, log_scale, log_gamma = tf.split(
-                1, 5, layers.linear(data, 5, scope='parameters'))
+                layers.linear(data, 5, scope='parameters'), 5, axis=1)
 
             center = self._get_center(grid, (x_offset, y_offset), tf.exp(log_stride))
 

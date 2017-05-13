@@ -20,22 +20,30 @@ from __future__ import print_function
 
 import tensorflow as tf
 import tensorflow.contrib.framework as framework
-import tensorflow.contrib.layers as layers
+import tensorflow.contrib.rnn as rnn
 
-import glas.model.rnn as rnn
+from glas.model.rnn import RNN
 
 
-class Cell(rnn.RNN):
+class Cell(RNN):
     """ Cell model """
     def __init__(self, num_units, num_layers=1, scope='Cell'):
         """ Initialize the cell """
         super(Cell, self).__init__(scope=scope)
 
-        with tf.variable_scope(self.variable_scope):
-            self.cell = tf.nn.rnn_cell.LSTMCell(num_units)
+        self.num_units = num_units
+        self.num_layers = num_layers
 
-            if num_layers > 1:
-                self.cell = tf.nn.rnn_cell.MultiRNNCell([self.cell] * num_layers)
+    @property
+    def cell(self):
+        """ Return the cell """
+        with tf.variable_scope(self.variable_scope, reuse=self.reuse):
+            cell = rnn.LSTMCell(self.num_units, reuse=self.reuse)
+
+            if self.num_layers > 1:
+                cell = rnn.MultiRNNCell([cell] * self.num_layers)
+
+        return cell
 
     @property
     def output_size(self):
@@ -49,16 +57,16 @@ class Cell(rnn.RNN):
 
     def zero_output_like(self, tensor):
         """ Get the zero output like the passed in tensor """
-        batch_size = layers.utils.first_dimension(tensor.get_shape(), min_rank=2)
+        batch_size = tensor.get_shape().as_list()[0]
         return tf.zeros((batch_size, self.output_size), tensor.dtype)
 
     def zero_state_like(self, tensor):
         """ Get the zero state like the passed in tensor """
-        batch_size = layers.utils.first_dimension(tensor.get_shape(), min_rank=2)
+        batch_size = tensor.get_shape().as_list()[0]
         return self.cell.zero_state(batch_size, tensor.dtype)
 
     @framework.add_arg_scope
-    @rnn.RNN.step_fn
+    @RNN.step_fn
     def __call__(self, data, outputs_collections=None):
         """ Execute the next time step of the cell """
         state = self.state if self.step > 0 else self.zero_state_like(data)

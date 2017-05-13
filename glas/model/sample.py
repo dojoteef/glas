@@ -22,8 +22,6 @@ import tensorflow as tf
 import tensorflow.contrib.distributions as distributions
 import tensorflow.contrib.framework as framework
 import tensorflow.contrib.layers as layers
-import tensorflow.contrib.losses as losses
-from tensorflow.python.framework import tensor_shape
 
 import glas.model.attention as attentions
 import glas.model.rnn as rnn
@@ -74,8 +72,8 @@ class BasicSampler(rnn.RNN):
             sigma = tf.exp(log_sigma)
             posterior = distributions.Normal(mean, sigma, name='posterior')
 
-            self.collect_named_outputs(posterior.mu)
-            self.collect_named_outputs(posterior.sigma)
+            self.collect_named_outputs(posterior.loc)
+            self.collect_named_outputs(posterior.scale)
             self.posteriors.append(posterior)
 
             return posterior
@@ -84,9 +82,9 @@ class BasicSampler(rnn.RNN):
         """ Calculate the latent loss in the form of KL divergence """
         for posterior in self.posteriors:
             # NOTE: set allow_nan=True to prevent a CPU-only Assert operation
-            kl_divergence = distributions.kl(posterior, self.prior, allow_nan=True)
+            kl_divergence = distributions.kl(posterior, self.prior)
             kl_divergence = tf.reduce_sum(latent_weights * kl_divergence, 1, name='kl_divergence')
-            losses.add_loss(tf.reduce_mean(kl_divergence, 0, name='kl_divergence/avg'))
+            tf.losses.add_loss(tf.reduce_mean(kl_divergence, 0, name='kl_divergence/avg'))
 
     @framework.add_arg_scope
     @rnn.RNN.step_fn
@@ -140,7 +138,7 @@ class HellingerSampler(BasicSampler):
         for posterior in self.posteriors:
             hellinger_distance = latent_weights * hellinger(posterior, self.prior)
             hellinger_distance = tf.reduce_sum(hellinger_distance, 1, name='hellinger')
-            losses.add_loss(tf.reduce_mean(hellinger_distance, 0, name='hellinger/avg'))
+            tf.losses.add_loss(tf.reduce_mean(hellinger_distance, 0, name='hellinger/avg'))
 
 
 class MinChiSquaredDistribution(distributions.Distribution):
@@ -164,8 +162,7 @@ class MinChiSquaredDistribution(distributions.Distribution):
             self._avg = tf.identity(mean, name='mean')
             super(MinChiSquaredDistribution, self).__init__(
                 dtype=self._avg.dtype,
-                is_continuous=True,
-                is_reparameterized=True,
+                reparameterization_type=distributions.FULLY_REPARAMETERIZED,
                 validate_args=validate_args,
                 allow_nan_stats=allow_nan_stats,
                 parameters=parameters,
@@ -174,28 +171,23 @@ class MinChiSquaredDistribution(distributions.Distribution):
 
     @staticmethod
     def _param_shapes(sample_shape):
-        """ Param shapes """
-        return dict(zip(('mean'), ([tf.convert_to_tensor(sample_shape, dtype=tf.int32)] * 2)))
+        return dict(zip(('mean'), ([tf.convert_to_tensor(sample_shape, dtype=tf.int32)])))
 
-    def _batch_shape(self):
-        """ Dynamic batch shape """
+    def _batch_shape_tensor(self):
         return tf.shape(self._avg)
 
-    def _get_batch_shape(self):
-        """ Static batch shape """
+    def _batch_shape(self):
         return self._avg.get_shape()
 
-    def _event_shape(self):
-        """ Dynamic event shape """
+    def _event_shape_tensor(self):
         return tf.constant([], dtype=tf.int32)
 
-    def _get_event_shape(self):
-        """ Static event shape """
-        return tensor_shape.scalar()
+    def _event_shape(self):
+        return tf.TensorShape([])
 
     def _sample_n(self, n, seed=None):
         """ Sample the minimum chi squared distribution using reparameterization """
-        shape = tf.concat(0, ([n], tf.shape(self.mean())))
+        shape = tf.concat(([n], tf.shape(self.mean())), 0)
         sampled = tf.random_normal(shape=shape, mean=0, stddev=1, dtype=self._avg.dtype, seed=seed)
         return sampled * (1.0 + sampled * self._avg)
 
@@ -285,7 +277,7 @@ class ChiSquaredSampler(BasicSampler):
             axes = tf.range(1, tf.rank(mean))
             chisq = tf.log1p(tf.square(mean - self.prior.mean()) / self.prior.variance())
             chisq = tf.reduce_sum(latent_weights * chisq, axes)
-            losses.add_loss(tf.reduce_mean(chisq, name='chisq'))
+            tf.losses.add_loss(tf.reduce_mean(chisq, name='chisq'))
 
 
 class EstimatedSampler(ChiSquaredSampler):
@@ -333,7 +325,7 @@ class UniformSampler(EstimatedSampler):
     def approximate_posterior(self, tensor, scope='posterior'):
         """ Calculate the approximate posterior given the tensor """
         # Generate mu and sigma of the Gaussian for the approximate posterior
-        sample_size = self.prior.get_batch_shape().as_list()[-1]
+        sample_size = self.prior.batch_shape.as_list()[-1]
         with tf.variable_scope(scope, 'posterior', [tensor]):
             mean = layers.linear(tensor, sample_size, scope='mean')
 
@@ -345,8 +337,8 @@ class UniformSampler(EstimatedSampler):
             delta = tf.sqrt(3.0 * variance)
             posterior = distributions.Uniform(mean - delta, mean + delta, name='posterior')
 
-            self.collect_named_outputs(posterior.a)
-            self.collect_named_outputs(posterior.b)
+            self.collect_named_outputs(posterior.low)
+            self.collect_named_outputs(posterior.high)
             self.posteriors.append(posterior)
 
             return posterior

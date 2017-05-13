@@ -72,15 +72,11 @@ def _get_data(dataset, batch_size=None, num_epochs=None, num_readers=1):
 def _get_data_preloaded(dataset, num_epochs=None, **kwargs):
     """ Get the subset of the passed in dataset from the directory indicated """
     images = dataset.data_sources
-    images_initializer = tf.placeholder(dtype=images.dtype, shape=images.shape)
-    images_variable = tf.Variable(images_initializer, trainable=False, collections=[])
-    [image] = tf.train.slice_input_producer([images_variable], num_epochs=num_epochs)
+
+    (image,) = tf.train.slice_input_producer((tf.constant(images),), num_epochs=num_epochs)
     image = preprocess_image(image)
 
-    init_op = images_variable.initializer
-    init_feed_dict = {images_initializer: images}
-
-    return init_op, init_feed_dict, image
+    return None, None, image
 # pylint: enable=unused-argument
 
 

@@ -24,7 +24,6 @@ import re
 from six import iteritems
 import tensorflow as tf
 import tensorflow.contrib.framework as framework
-import tensorflow.contrib.losses as losses
 from tensorflow.python.client import device_lib
 
 
@@ -108,18 +107,18 @@ def optimize_towers(optimizer, towers, clip_norm=None, **kwargs):
     all_tower_losses = []
     all_tower_grads_and_vars = []
 
-    num_towers = len(towers)
-    regularization_losses = losses.get_regularization_losses()
+    num_towers = tf.to_float(len(towers))
+    regularization_losses = tf.losses.get_regularization_losses()
 
     for tower in towers:
         with tf.device(tower.device):
             with tf.name_scope(tower.scope):
                 # Scale based on number of towers
-                tower_losses = losses.get_losses(tower.scope)
+                tower_losses = tf.losses.get_losses(tower.scope)
                 total_tower_loss = tf.divide(tf.add_n(tower_losses), num_towers, name='total_loss')
                 all_tower_losses.append(total_tower_loss)
 
-                tower_klds = losses.get_losses('{0}.*kl_divergence'.format(tower.scope))
+                tower_klds = tf.losses.get_losses('{0}.*kl_divergence'.format(tower.scope))
                 if tower_klds:
                     total_tower_kld = tf.divide(tf.add_n(tower_klds), num_towers, name='total_kld')
                     all_tower_klds.append(total_tower_kld)

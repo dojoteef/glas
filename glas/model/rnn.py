@@ -22,7 +22,6 @@ import functools
 
 import tensorflow as tf
 import tensorflow.contrib.framework as framework
-import tensorflow.contrib.layers as layers
 
 
 class RNN(object):
@@ -50,11 +49,18 @@ class RNN(object):
         """ How many steps have been """
         return len(self.outputs)
 
+    @property
+    def reuse(self):
+        """ Should the RNN reuse variables """
+        return True if self.step > 0 or tf.get_variable_scope().reuse else None
+
     @framework.add_arg_scope
     def collect_named_outputs(self, tensor, outputs_collections=None):
         """ Wrapper for collect_named_outputs """
-        alias = self.variable_scope.original_name_scope
-        return layers.utils.collect_named_outputs(outputs_collections, alias, tensor)
+        for outputs_collection in outputs_collections or []:
+            tf.add_to_collection(outputs_collection, tensor)
+
+        return tensor
 
     @staticmethod
     def step_fn(wrapped_fn):
@@ -62,12 +68,11 @@ class RNN(object):
         @functools.wraps(wrapped_fn)
         def wrapper(self, *args, **kwargs):
             """ Determine scope reuse and keep track of states and outputs """
-            reuse = True if self.step > 0 else None
             with framework.arg_scope(
                 [self.collect_named_outputs],
                 outputs_collections=kwargs.get('outputs_collections')):
 
-                with tf.variable_scope(self.variable_scope, reuse=reuse):
+                with tf.variable_scope(self.variable_scope, reuse=self.reuse):
                     output, state = wrapped_fn(self, *args, **kwargs)
                     output = tf.identity(output, name='rnn_output')
 
