@@ -161,17 +161,6 @@ def train_model(config):
         summaries.extend(layers.summarize_collection(graph_utils.GraphKeys.RNN_OUTPUTS))
         summaries.extend(layers.summarize_collection(graph_utils.GraphKeys.TRAINING_PARAMETERS))
 
-        images = input_utils.reshape_images(inputs_queue.dequeue(), config.dataset)
-        tiled_images = image_utils.tile_images(images)
-        summaries.append(tf.summary.image('input_batch', tiled_images))
-
-        # Generate the canvases that lead to the final output image
-        with tf.name_scope('canvases'):
-            for step, canvas in enumerate(towers[0].outputs):
-                canvas = input_utils.reshape_images(canvas, config.dataset)
-                tiled_images = image_utils.tile_images(canvas)
-                summaries.append(tf.summary.image('step{0}'.format(step), tiled_images))
-
         with tf.name_scope('losses'):
             if total_kld is not None:
                 summaries.append(tf.summary.scalar('total_kld', total_kld))

@@ -111,7 +111,7 @@ def evaluate_model(config):
         checkpoint_path = tf.train.latest_checkpoint(checkpoint_path)
     eval_ops = tf.group(*outputs)
     hooks = [
-        training.SummaryAtEndHook(FLAGS.log_dir, summary_op),
+        training.SummaryAtEndHook(log_dir=FLAGS.log_dir, summary_op=summary_op),
         training.StopAfterNEvalsHook(FLAGS.count)]
 
     training.evaluate_once(checkpoint_path, hooks=hooks, eval_ops=eval_ops)
