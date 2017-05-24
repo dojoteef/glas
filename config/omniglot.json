@@ -12,7 +12,7 @@
     "samples": 1,
     "sample_size": 25,
     "sample_attention_type": "cauchy",
-    "sample_type": "chisq",
+    "sample_type": "basic",
     "latent_read_size": 5,
     "latent_size": 9
   }

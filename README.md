@@ -75,25 +75,15 @@ trying their approach with a DRAW-like model in the future.
 
 ## Method
 
-Several new techniques were developed in conjunction, in order to best optimize
-the model for attention over the latent space. The first set of techniques
-relates to the use of attention mechanisms. Several attention mechanisms have
-previously been explored. The DRAW network uses 2D Gaussian filters; NTM uses
-cosine similarity combined with softmax; Li and colleagues (2016) used sigmoid
-and alternatively softmax based attention. In order to apply attention to the
-latent space of the model, all of the aforementioned approaches were tried.
-However, these methods resulted in a poor optimization of the cost function.
-Accordingly, a method was devised which achieved better results and is
-elaborated upon below.
-
-The second set of techniques deals with optimization of the variational bound.
-There are many divergences and metrics available to choose from as a
-variational bound (Gibbs et al., 2002), though the Kullback-Leibler divergence
-is widespread in the literature. However, the use of other divergences for
-variational inference (e.g., the Rényi divergence; Li et al., 2016) has
-recently been investigated. In a similar effort to better optimize the
-log-likelihood of the model, this project developed the use of the χ²
-divergence and an associated minimum χ² probability distribution.
+A new technique was developed, in order to best optimize the model for
+attention over the latent space. The technique relates to the use of attention
+mechanisms. Several attention mechanisms have previously been explored. The
+DRAW network uses 2D Gaussian filters; NTM uses cosine similarity combined with
+softmax; Li and colleagues (2016) used sigmoid and alternatively softmax based
+attention. In order to apply attention to the latent space of the model, all of
+the aforementioned approaches were tried. However, these methods resulted in a
+poor optimization of the cost function. Accordingly, a method was devised which
+achieved better results and is elaborated upon below.
 
 ### Latent Attention
 
@@ -153,75 +143,6 @@ seen as a linear combination of the form:
   (𝑍ᵢ * Xⱼ / Yⱼ) + (𝑍ᵢ₊₁ * 𝑋ⱼ₊₁ / 𝑌ⱼ₊₁) + ...
 ```
 
-### Variational bound
-
-For variational auto-encoders, the typical approach has been to minimize the
-variational bound in the form of the Kullback-Leibler divergence (Kingma &
-Welling, 2014). There is a strong theoretical foundation for its use. Namely, it
-can be viewed as the number of extra bits required to encode a random variable,
-drawn from distribution 𝘗 using a code optimized for distribution 𝘘. The use of
-the Kullback-Leibler divergence works well in many circumstances. However, in
-optimizing the GLAS model, the variational bound was too large, thus preventing
-lowering the log-likelihood. For this reason, another well known divergence,
-the χ² divergence, was explored as a method of minimizing the variational
-bound.
-
-#### χ² divergence
-
-The χ² divergence is defined as:
-
-```
-χ²(𝘗,𝘘) = ∫(𝘗 - 𝘘)²/𝘘 𝑑λ = ∫𝘗²/𝘘 𝑑λ - 1
-```
-
-Gibbs and colleagues (2002) gave a thorough exposition on a number of metrics
-and divergences, with associated bounds and relations among them. From this
-literature, it can be seen that the χ² divergence is an upper bound of the
-Kullback-Leibler divergence. Specifically:
-
-```
-KL(𝘗,𝘘) ≤ log(1 + χ²(𝘗,𝘘))
-```
-
-Kumar & Taneja (n.d.) comprehensively studied the principle of minimum
-discrimination information with respect to the χ² divergence. Given a *prior*
-𝘗, the approximate *posterior* 𝘘 being estimated, and the first moment of 𝘘
-(the arithmetic mean), one can define the minimum χ² probability distribution
-(i.e., the distribution which minimizes the χ² divergence) as:
-
-```
-𝘘(𝑥) = 𝘗(𝑥)[𝒎₂,𝘱 - 𝒎₁,𝘲𝒎₁,𝘱 + 𝑥(𝒎₁,𝘲 - 𝒎₁,𝘱)] / σ𝘱²
-```
-
-Where 𝒎₁,𝘱, 𝒎₂,𝘱 are the first and second moments of 𝘗, σ𝘱² is the variance of
-𝘗, and 𝒎₁,𝘲 is the first moment of 𝘘. When treating the prior 𝘱 as the standard
-normal distribution 𝒩(0,1), this becomes:
-
-```
-𝘘(𝑥) = 𝘗(𝑥)[1 + 𝑥𝒎₁,𝘲]
-```
-
-And the minimum χ² divergence measure is:
-
-```
-min χ²(𝑥) = (𝒎₁,𝘲 - 𝒎₁,𝘱)² / σ𝘱²
-```
-
-Which reduces to:
-
-```
-min χ²(𝑥) = (𝒎₁,𝘲 - 1)² ≥ log(1 + (𝒎₁,𝘲 - 1)²) ≥ KL(𝘗,𝘘)
-```
-
-Thus, the variational bound to be optimized is the log of one plus the χ²
-divergence. Notably, it is an upper bound to the Kullback-Leibler divergence,
-and thus can lead to a higher cost. Interestingly, the divergence between the
-*approximate* posterior and the *true* posterior tends to be smaller when the χ²
-divergence is used as the variational bound, versus when the Kullback-Leibler
-divergence is used. The experiment results below show this behavior; although,
-as the depth of the model grows, the χ² divergence tends to lead to a lower
-overall cost. The reasoning behind this phenomenon is not currently clear.
-
 ## Experiments
 
 The model was tested on the binarized versions of both the MNIST (LeCun et al.,
@@ -229,24 +150,15 @@ The model was tested on the binarized versions of both the MNIST (LeCun et al.,
 MNIST dataset is the same used by Larochelle and colleagues (2011), while the
 Omniglot dataset is a 28x28 binarized version from Burda and colleagues (2015).
 
-The tests were run using the Kullback-Leibler divergence and the χ² divergence.
 For optimization, Adam was used (Kingma & Ba, 2015) with 𝛽₁=0.9, 𝛽₂=0.999,
 𝜖=10⁻⁸ and minibatch sizes of 128. The size of the latent space 𝕃 was 9x9, with
 a 5x5 latent attention filter. At each of the 64 time steps, a sample of size
 25 was generated from the approximate posterior, 𝒛𝑡 ∼ 𝘘(𝑍𝑡|𝒂𝑡).
 
-As stated in the methods section, it is clear there is a relationship with the
-depth of the model and how well the χ² divergence allows for optimizing the
-log-likelihood of the model. In the results below, with 64 time steps the χ²
-divergence leads to a lower log-likelihood than the Kullback-Leibler
-divergence.
-
-|  Dataset | NLL    | Metric | Divergence |
-|:---------|-------:|:-------|-----------:|
-| MNIST    | 89.67  | KL     | 24.52      |
-| MNIST    | 82.07  | χ²     | 13.35      |
-| OMNIGLOT | 119.63 | KL     | 24.82      |
-| OMNIGLOT | 112.43 | χ²     | 14.59      |
+|  Dataset | NLL    |
+|:---------|-------:|
+| MNIST    | 89.67  |
+| OMNIGLOT | 119.63 |
 
 
 **MNIST**
@@ -300,16 +212,20 @@ estimation of the moments of the approximate posterior.
 distance and the Kullback-Leibler divergence are a class of 𝑓-divergence, they
 do not necessarily afford the same bounding properties.
 
+5. An attempt was made to try to make use of the χ² divergence, though after
+closer examination of the approach it turns out the method used was not
+actually optimizing for the χ² divergence as intended. This was a result of an
+oversight of the min χ² divergence distribution's probability density function
+and a subsequent mistake in the programming for the approach.
+
 ## Conclusion
 
 The GLAS model detailed here puts attention on a small set of latent variables
 per time step of a deep recurrent model. The results demonstrate that the model
 clearly attends to a small portion of the latent space per time step. This can
 be seen in images generated from the model trained on the binarized MNIST
-dataset. A divergence measure previously unexplored in relation to variational
-auto-encoders, the χ² divergence, was used as the variational bound with
-promising results. Additionally, a 2D differentiable attention mechanism,
-modeled after the attention used in DRAW, was developed.
+dataset. Additionally, a 2D differentiable attention mechanism, modeled after
+the attention used in DRAW, was developed.
 
 ## Future Work
 
@@ -329,56 +245,47 @@ dataset and visualize the output of the model at each time step.
 
 [[2]] Chen, Xi, et al. "InfoGAN: Interpretable representation learning by information maximizing generative adversarial nets." Advances in Neural Information Processing Systems. 2016.
 
-[[3]] Gibbs, Alison L., and Francis Edward Su. "On choosing and bounding probability metrics." International statistical review 70.3 (2002): 419-435.
+[[3]] Graves, Alex, Greg Wayne, and Ivo Danihelka. "Neural turing machines." arXiv preprint arXiv:1410.5401 (2014).
 
-[[4]] Graves, Alex, Greg Wayne, and Ivo Danihelka. "Neural turing machines." arXiv preprint arXiv:1410.5401 (2014).
+[[4]] Gregor, Karol, et al. "DRAW: A recurrent neural network for image generation." arXiv preprint arXiv:1502.04623 (2015).
 
-[[5]] Gregor, Karol, et al. "DRAW: A recurrent neural network for image generation." arXiv preprint arXiv:1502.04623 (2015).
+[[5]] Gregor, Karol, et al. "Towards conceptual compression." Advances In Neural Information Processing Systems. 2016.
 
-[[6]] Gregor, Karol, et al. "Towards conceptual compression." Advances In Neural Information Processing Systems. 2016.
+[[6]] Kingma, Diederik P., and Max Welling. "Auto-encoding variational bayes." arXiv preprint arXiv:1312.6114 (2013).
 
-[[7]] Kingma, Diederik P., and Max Welling. "Auto-encoding variational bayes." arXiv preprint arXiv:1312.6114 (2013).
+[[7]] Kingma, Diederik, and Jimmy Ba. "Adam: A method for stochastic optimization." arXiv preprint arXiv:1412.6980 (2014).
 
-[[8]] Kingma, Diederik, and Jimmy Ba. "Adam: A method for stochastic optimization." arXiv preprint arXiv:1412.6980 (2014).
+[[8]] Kulkarni, Tejas D., et al. "Deep convolutional inverse graphics network." Advances in Neural Information Processing Systems. 2015.
 
-[[9]] Kulkarni, Tejas D., et al. "Deep convolutional inverse graphics network." Advances in Neural Information Processing Systems. 2015.
+[[9]] Lake, Brenden M., Ruslan Salakhutdinov, and Joshua B. Tenenbaum. "Human-level concept learning through probabilistic program induction." Science 350.6266 (2015): 1332-1338.
 
-[[10]] Kumar, Pranesh, and I. J. Taneja. "Minimum χ²−Divergence Continuous Probability Distributions."
+[[10]] Larochelle, Hugo, and Iain Murray. "The Neural Autoregressive Distribution Estimator." AISTATS. Vol. 1. 2011.<Paste>
 
-[[11]] Lake, Brenden M., Ruslan Salakhutdinov, and Joshua B. Tenenbaum. "Human-level concept learning through probabilistic program induction." Science 350.6266 (2015): 1332-1338.
+[[11]] LeCun, Yann, et al. "Gradient-based learning applied to document recognition." Proceedings of the IEEE 86.11 (1998): 2278-2324.
 
-[[12]] Larochelle, Hugo, and Iain Murray. "The Neural Autoregressive Distribution Estimator." AISTATS. Vol. 1. 2011.<Paste>
+[[12]] Li, Chongxuan, Jun Zhu, and Bo Zhang. "Learning to generate with memory." Proc. ICML. 2016.
 
-[[13]] LeCun, Yann, et al. "Gradient-based learning applied to document recognition." Proceedings of the IEEE 86.11 (1998): 2278-2324.
+[[13]] Mansimov, Elman, et al. "Generating images from captions with attention." arXiv preprint arXiv:1511.02793 (2015).
 
-[[14]] Li, Chongxuan, Jun Zhu, and Bo Zhang. "Learning to generate with memory." Proc. ICML. 2016.
+[[14]] Vinyals, Oriol, Meire Fortunato, and Navdeep Jaitly. "Pointer networks." Advances in Neural Information Processing Systems. 2015.
 
-[[15]] Li, Yingzhen, and Richard E. Turner. "Variational inference with Rényi divergence." stat 1050 (2016): 6.
+[[15]] Weston, Jason, Sumit Chopra, and Antoine Bordes. "Memory networks." arXiv preprint arXiv:1410.3916 (2014).
 
-[[16]] Mansimov, Elman, et al. "Generating images from captions with attention." arXiv preprint arXiv:1511.02793 (2015).
-
-[[17]] Vinyals, Oriol, Meire Fortunato, and Navdeep Jaitly. "Pointer networks." Advances in Neural Information Processing Systems. 2015.
-
-[[18]] Weston, Jason, Sumit Chopra, and Antoine Bordes. "Memory networks." arXiv preprint arXiv:1410.3916 (2014).
-
-[[19]] Xu, Kelvin, et al. "Show, Attend and Tell: Neural Image Caption Generation with Visual Attention." ICML. Vol. 14. 2015.
+[[16]] Xu, Kelvin, et al. "Show, Attend and Tell: Neural Image Caption Generation with Visual Attention." ICML. Vol. 14. 2015.
 
 [1]: https://arxiv.org/abs/1509.00519
 [2]: http://papers.nips.cc/paper/6399-infogan-interpretable-representation-learning-by-information-maximizing-generative-adversarial-nets
-[3]: https://arxiv.org/abs/math/0209021
-[4]: https://arxiv.org/abs/1410.5401
-[5]: https://arxiv.org/abs/1502.04623
-[6]: https://arxiv.org/abs/1604.08772
-[7]: https://arxiv.org/abs/1312.6114
-[8]: https://arxiv.org/abs/1412.6980
-[9]: http://papers.nips.cc/paper/5851-deep-convolutional-inverse-graphics-network
-[10]: http://web.unbc.ca/~kumarp/d4.pdf
-[11]: http://science.sciencemag.org/content/350/6266/1332
-[12]: http://jmlr.csail.mit.edu/proceedings/papers/v15/larochelle11a/larochelle11a.pdf
-[13]: http://yann.lecun.com/exdb/publis/pdf/lecun-01a.pdf
-[14]: https://arxiv.org/abs/1602.07416
-[15]: https://arxiv.org/abs/1602.02311
-[16]: https://arxiv.org/abs/1511.02793
-[17]: https://papers.nips.cc/paper/5866-pointer-networks
-[18]: https://arxiv.org/abs/1410.3916
-[19]: https://arxiv.org/abs/1502.03044
+[3]: https://arxiv.org/abs/1410.5401
+[4]: https://arxiv.org/abs/1502.04623
+[5]: https://arxiv.org/abs/1604.08772
+[6]: https://arxiv.org/abs/1312.6114
+[7]: https://arxiv.org/abs/1412.6980
+[8]: http://papers.nips.cc/paper/5851-deep-convolutional-inverse-graphics-network
+[9]: http://science.sciencemag.org/content/350/6266/1332
+[10]: http://jmlr.csail.mit.edu/proceedings/papers/v15/larochelle11a/larochelle11a.pdf
+[11]: http://yann.lecun.com/exdb/publis/pdf/lecun-01a.pdf
+[12]: https://arxiv.org/abs/1602.07416
+[13]: https://arxiv.org/abs/1511.02793
+[14]: https://papers.nips.cc/paper/5866-pointer-networks
+[15]: https://arxiv.org/abs/1410.3916
+[16]: https://arxiv.org/abs/1502.03044
